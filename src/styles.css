@@ -59,6 +59,16 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-level-0: var(--level-0);
+  --color-level-0-foreground: var(--level-0-foreground);
+  --color-level-1: var(--level-1);
+  --color-level-1-foreground: var(--level-1-foreground);
+  --color-level-2: var(--level-2);
+  --color-level-2-foreground: var(--level-2-foreground);
+  --color-level-3: var(--level-3);
+  --color-level-3-foreground: var(--level-3-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
 }
 
 :root {
