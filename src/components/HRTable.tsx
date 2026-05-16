@@ -96,6 +96,16 @@ export function HRTable({
                     </span>
                   </TableCell>
                   <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span>{days}d</span>
+                      {overdue && (
+                        <Badge className="gap-1 bg-warning text-warning-foreground hover:bg-warning">
+                          <AlertCircle className="h-3 w-3" /> Overdue
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     {(() => {
                       const c = completionFor(lessons, progress[t.id]);
                       return (
