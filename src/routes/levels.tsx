@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppHeader } from "@/components/AppHeader";
-import { LEVELS, LEVEL_INFO, useRole } from "@/lib/trainees";
+import { AppShell } from "@/components/AppShell";
+import { LEVELS, LEVEL_INFO } from "@/lib/trainees";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/levels")({
@@ -18,11 +18,9 @@ export const Route = createFileRoute("/levels")({
 });
 
 function LevelsPage() {
-  const [role, setRole] = useRole();
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader role={role} onRoleChange={setRole} />
-      <main className="container mx-auto max-w-3xl space-y-6 px-4 py-8">
+    <AppShell>
+      <div className="mx-auto max-w-3xl space-y-6">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Level Reference</h2>
           <p className="text-sm text-muted-foreground">
@@ -49,7 +47,7 @@ function LevelsPage() {
             );
           })}
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

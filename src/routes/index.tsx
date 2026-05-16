@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { AppHeader } from "@/components/AppHeader";
+import { AppShell } from "@/components/AppShell";
 import { LevelLegend } from "@/components/LevelLegend";
 import { SummaryCards } from "@/components/SummaryCards";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { HRTable } from "@/components/HRTable";
 import { AddTraineeDialog } from "@/components/AddTraineeDialog";
 import { useRole, useTrainees } from "@/lib/trainees";
-import { Toaster } from "@/components/ui/sonner";
+import { useLessons } from "@/lib/modules";
+import { useProgress, completionFor } from "@/lib/progress";
 import {
   Select,
   SelectContent,
@@ -16,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,8 +34,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [role, setRole] = useRole();
+  const [role] = useRole();
   const { trainees, hydrated, add, update, remove, promote } = useTrainees();
+  const { lessons } = useLessons();
+  const { progress } = useProgress();
   const [managerFilter, setManagerFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -51,10 +55,23 @@ function Index() {
     });
   }, [trainees, managerFilter, statusFilter]);
 
+  function guardedPromote(id: string) {
+    const t = trainees.find((x) => x.id === id);
+    if (t && t.currentLevel === 0) {
+      const c = completionFor(lessons, progress[t.id]);
+      if (c.pct < 100) {
+        toast.error(
+          `Complete all ${c.total} Level 0 modules first (${c.done}/${c.total} done)`,
+        );
+        return;
+      }
+    }
+    promote(id);
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader role={role} onRoleChange={setRole} />
-      <main className="container mx-auto space-y-6 px-4 py-6">
+    <AppShell>
+      <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight">
@@ -108,12 +125,16 @@ function Index() {
         )}
 
         {role === "hr" ? (
-          <HRTable trainees={trainees} onUpdate={update} onPromote={promote} onRemove={remove} />
+          <HRTable
+            trainees={trainees}
+            onUpdate={update}
+            onPromote={guardedPromote}
+            onRemove={remove}
+          />
         ) : (
           <KanbanBoard trainees={filtered} />
         )}
-      </main>
-      <Toaster />
-    </div>
+      </div>
+    </AppShell>
   );
 }
