@@ -134,6 +134,7 @@ function Index() {
             onRemove={remove}
             lessons={lessons}
             progress={progress}
+            onSetLesson={setLesson}
           />
         ) : (
           <KanbanBoard trainees={filtered} lessons={lessons} progress={progress} />
