@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useLessons, groupByModule } from "@/lib/modules";
@@ -12,8 +12,25 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { getAuthRole } from "@/lib/auth";
 
 export const Route = createFileRoute("/analytics")({
+  beforeLoad: ({ location }) => {
+    const role = getAuthRole();
+    if (!role) {
+      throw redirect({
+        to: "/login",
+        search: {
+          redirect: location.href,
+        },
+      });
+    }
+    if (role !== "admin") {
+      throw redirect({
+        to: "/modules",
+      });
+    }
+  },
   head: () => ({ meta: [{ title: "Analytics — Okie Dokie Solutions" }] }),
   component: AnalyticsPage,
 });

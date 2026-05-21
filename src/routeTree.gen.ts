@@ -14,7 +14,9 @@ import { Route as TrainingRouteImport } from './routes/training'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as ModulesRouteImport } from './routes/modules'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as LevelsRouteImport } from './routes/levels'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CertificatesRouteImport } from './routes/certificates'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
@@ -45,9 +47,19 @@ const ModulesRoute = ModulesRouteImport.update({
   path: '/modules',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LevelsRoute = LevelsRouteImport.update({
   id: '/levels',
   path: '/levels',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CertificatesRoute = CertificatesRouteImport.update({
@@ -75,7 +87,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/certificates': typeof CertificatesRoute
+  '/dashboard': typeof DashboardRoute
   '/levels': typeof LevelsRoute
+  '/login': typeof LoginRoute
   '/modules': typeof ModulesRoute
   '/progress': typeof ProgressRoute
   '/reports': typeof ReportsRoute
@@ -87,7 +101,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/certificates': typeof CertificatesRoute
+  '/dashboard': typeof DashboardRoute
   '/levels': typeof LevelsRoute
+  '/login': typeof LoginRoute
   '/modules': typeof ModulesRoute
   '/progress': typeof ProgressRoute
   '/reports': typeof ReportsRoute
@@ -100,7 +116,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/certificates': typeof CertificatesRoute
+  '/dashboard': typeof DashboardRoute
   '/levels': typeof LevelsRoute
+  '/login': typeof LoginRoute
   '/modules': typeof ModulesRoute
   '/progress': typeof ProgressRoute
   '/reports': typeof ReportsRoute
@@ -114,7 +132,9 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/certificates'
+    | '/dashboard'
     | '/levels'
+    | '/login'
     | '/modules'
     | '/progress'
     | '/reports'
@@ -126,7 +146,9 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/certificates'
+    | '/dashboard'
     | '/levels'
+    | '/login'
     | '/modules'
     | '/progress'
     | '/reports'
@@ -138,7 +160,9 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/certificates'
+    | '/dashboard'
     | '/levels'
+    | '/login'
     | '/modules'
     | '/progress'
     | '/reports'
@@ -151,7 +175,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalyticsRoute: typeof AnalyticsRoute
   CertificatesRoute: typeof CertificatesRoute
+  DashboardRoute: typeof DashboardRoute
   LevelsRoute: typeof LevelsRoute
+  LoginRoute: typeof LoginRoute
   ModulesRoute: typeof ModulesRoute
   ProgressRoute: typeof ProgressRoute
   ReportsRoute: typeof ReportsRoute
@@ -197,11 +223,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ModulesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/levels': {
       id: '/levels'
       path: '/levels'
       fullPath: '/levels'
       preLoaderRoute: typeof LevelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/certificates': {
@@ -239,7 +279,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
   CertificatesRoute: CertificatesRoute,
+  DashboardRoute: DashboardRoute,
   LevelsRoute: LevelsRoute,
+  LoginRoute: LoginRoute,
   ModulesRoute: ModulesRoute,
   ProgressRoute: ProgressRoute,
   ReportsRoute: ReportsRoute,

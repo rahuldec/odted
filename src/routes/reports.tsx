@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useLessons, groupByModule } from "@/lib/modules";
@@ -10,8 +10,25 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Download } from "lucide-react";
+import { getAuthRole } from "@/lib/auth";
 
 export const Route = createFileRoute("/reports")({
+  beforeLoad: ({ location }) => {
+    const role = getAuthRole();
+    if (!role) {
+      throw redirect({
+        to: "/login",
+        search: {
+          redirect: location.href,
+        },
+      });
+    }
+    if (role !== "admin") {
+      throw redirect({
+        to: "/modules",
+      });
+    }
+  },
   head: () => ({ meta: [{ title: "Reports — Okie Dokie Solutions" }] }),
   component: ReportsPage,
 });

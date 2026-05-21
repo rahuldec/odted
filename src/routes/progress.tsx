@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useLessons, groupByModule } from "@/lib/modules";
@@ -19,8 +19,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 // no checkbox dependency — using native input
 import { FileText, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { getAuthRole } from "@/lib/auth";
 
 export const Route = createFileRoute("/progress")({
+  beforeLoad: ({ location }) => {
+    const role = getAuthRole();
+    if (!role) {
+      throw redirect({
+        to: "/login",
+        search: {
+          redirect: location.href,
+        },
+      });
+    }
+    if (role !== "admin") {
+      throw redirect({
+        to: "/modules",
+      });
+    }
+  },
   head: () => ({ meta: [{ title: "Progress Tracker — Okie Dokie Solutions" }] }),
   component: ProgressPage,
 });

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useLessons } from "@/lib/modules";
@@ -7,8 +7,25 @@ import { useProgress, completionFor } from "@/lib/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Award, Printer, Building2 } from "lucide-react";
+import { getAuthRole } from "@/lib/auth";
 
 export const Route = createFileRoute("/certificates")({
+  beforeLoad: ({ location }) => {
+    const role = getAuthRole();
+    if (!role) {
+      throw redirect({
+        to: "/login",
+        search: {
+          redirect: location.href,
+        },
+      });
+    }
+    if (role !== "admin") {
+      throw redirect({
+        to: "/modules",
+      });
+    }
+  },
   head: () => ({ meta: [{ title: "Certificates — Okie Dokie Solutions" }] }),
   component: CertificatesPage,
 });
