@@ -201,8 +201,7 @@ export function ModulesView() {
         }
         .od-badge-assn { background: #FEF0E9; color: #993C1D; }
         .od-badge-count { background: #F1EFE8; color: #5F5E5A; }
-        .od-card-title { font-size: 15px; font-weight: 600; color: #1a1a18; margin-bottom: 2px; }
-        .od-card-desc { font-size: 12px; color: #888780; margin-bottom: 14px; }
+        .od-card-title { font-size: 18px; font-weight: 600; color: #1a1a18; margin-bottom: 14px; }
         .od-prog-track { background: #F1EFE8; border-radius: 99px; height: 4px; margin-bottom: 5px; }
         .od-prog-fill { height: 4px; border-radius: 99px; background: #E05A2B; transition: width 0.3s; }
         .od-prog-meta {
@@ -346,10 +345,6 @@ export function ModulesView() {
                     </div>
 
                     <div className="od-card-title">{g.moduleName}</div>
-                    <div className="od-card-desc">
-                      {g.lessons.map((l) => l.lessonName).slice(0, 2).join(", ")}
-                      {g.lessons.length > 2 && " …"}
-                    </div>
 
                     <div className="od-prog-track">
                       <div className="od-prog-fill" style={{ width: `${pct}%` }} />
