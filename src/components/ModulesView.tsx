@@ -4,13 +4,6 @@ import { useLessons, groupByModule, type Lesson } from "@/lib/modules";
 import { useRole, useTrainees, type Trainee } from "@/lib/trainees";
 import { useProgress, isLessonComplete } from "@/lib/progress";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { LessonDialog } from "@/components/LessonDialog";
 import {
   CheckCircle2,
@@ -149,15 +142,7 @@ export function ModulesView() {
         .od-progress-fill { height: 6px; border-radius: 99px; background: #E05A2B; transition: width 0.4s ease; }
         .od-progress-pct { font-size: 12px; font-weight: 600; color: #E05A2B; min-width: 34px; text-align: right; }
 
-        /* ── trainee selector ── */
-        .od-selector-bar {
-          background: #F7F6F3;
-          border-bottom: 0.5px solid #e8e6e0;
-          padding: 12px 28px;
-          display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-        }
-        .od-selector-label { font-size: 12px; color: #5F5E5A; font-weight: 500; }
-        .od-sync-time { font-size: 11px; color: #B4B2A9; }
+
 
         /* ── module grid ── */
         .od-body { padding: 24px 28px; background: #F7F6F3; }
@@ -276,32 +261,7 @@ export function ModulesView() {
           </div>
         )}
 
-        {/* ── Trainee selector (HR only) ── */}
-        {role === "hr" && (
-          <div className="od-selector-bar">
-            <span className="od-selector-label">Track trainee</span>
-            <Select value={traineeId} onValueChange={setTraineeId}>
-              <SelectTrigger className="w-[240px] h-8 text-sm">
-                <SelectValue placeholder="Browse only (no trainee)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Browse only</SelectItem>
-                {trainees
-                  .filter((t) => t.currentLevel === 0)
-                  .map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.name} · {t.manager || "—"}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-            {syncedAt && (
-              <span className="od-sync-time">
-                Last synced {new Date(syncedAt).toLocaleString()}
-              </span>
-            )}
-          </div>
-        )}
+
 
         {/* ── Module cards grid ── */}
         <div className="od-body">
