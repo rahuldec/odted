@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-
 import { SummaryCards } from "@/components/SummaryCards";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { HRTable } from "@/components/HRTable";
@@ -88,30 +87,35 @@ function Index() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-7xl space-y-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              {role === "hr" ? "Human Resources" : "Management"}
-            </p>
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-              {role === "hr" ? "Dashboard" : "Overview"}
-            </h2>
-            <p className="max-w-xl text-sm text-muted-foreground">
-              {role === "hr"
-                ? "Add, promote and manage trainees through the program."
-                : "Read-only view of all trainees and their progress."}
-            </p>
+      <div className="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8">
+        {/* Modern Header */}
+        <div className="border-b border-border pb-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                {role === "hr" ? "Human Resources" : "Management"}
+              </p>
+              <h1 className="text-4xl font-semibold tracking-tight text-foreground">
+                {role === "hr" ? "Dashboard" : "Overview"}
+              </h1>
+              <p className="max-w-2xl text-sm text-muted-foreground">
+                {role === "hr"
+                  ? "Add, promote and manage trainees through the program."
+                  : "Read-only view of all trainees and their progress."}
+              </p>
+            </div>
+            {role === "hr" && hydrated && <AddTraineeDialog onAdd={add} />}
           </div>
-          {role === "hr" && hydrated && <AddTraineeDialog onAdd={add} />}
         </div>
 
+        {/* Summary Cards */}
         <SummaryCards trainees={trainees} />
 
+        {/* Filters for Management View */}
         {role === "management" && (
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="grid gap-1.5">
-              <Label className="text-xs">Filter by manager</Label>
+          <div className="flex flex-wrap gap-4 rounded-lg border border-border bg-card p-4">
+            <div className="grid gap-2">
+              <Label className="text-xs font-semibold">Filter by manager</Label>
               <Select value={managerFilter} onValueChange={setManagerFilter}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue />
@@ -126,8 +130,8 @@ function Index() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-1.5">
-              <Label className="text-xs">Filter by status</Label>
+            <div className="grid gap-2">
+              <Label className="text-xs font-semibold">Filter by status</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[160px]">
                   <SelectValue />
@@ -143,6 +147,7 @@ function Index() {
           </div>
         )}
 
+        {/* HR or Management View */}
         {role === "hr" ? (
           <HRTable
             trainees={trainees}
