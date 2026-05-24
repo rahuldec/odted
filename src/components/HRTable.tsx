@@ -30,12 +30,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LEVEL_INFO, daysBetween, nextLevel, type Trainee, type Status } from "@/lib/trainees";
-import { ChevronUp, Pencil, Trash2, ListChecks, X } from "lucide-react";
+import { ChevronUp, Pencil, Trash2, ListChecks, X, ArrowUpDown } from "lucide-react";
 import { EditTraineeDialog } from "./EditTraineeDialog";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { completionFor, isLessonComplete, type LessonProgress, type ProgressMap } from "@/lib/progress";
 import { groupByModule, type Lesson } from "@/lib/modules";
+
+type SortKey = "name" | "level" | "joinDate" | "progress" | "status";
+type SortDir = "asc" | "desc";
 
 export function HRTable({
   trainees,
@@ -58,6 +61,8 @@ export function HRTable({
   const [deleting, setDeleting] = useState<Trainee | null>(null);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [bulkLesson, setBulkLesson] = useState<string>("");
+  const [sortKey, setSortKey] = useState<SortKey>("level");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const selectedIds = useMemo(
     () => trainees.filter((t) => selected[t.id]).map((t) => t.id),
@@ -65,6 +70,33 @@ export function HRTable({
   );
   const allChecked = trainees.length > 0 && selectedIds.length === trainees.length;
   const someChecked = selectedIds.length > 0 && !allChecked;
+
+  const sorted = useMemo(() => {
+    const copy = [...trainees];
+    copy.sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "name") cmp = a.name.localeCompare(b.name);
+      else if (sortKey === "level") cmp = a.currentLevel - b.currentLevel;
+      else if (sortKey === "joinDate") cmp = new Date(a.joinDate).getTime() - new Date(b.joinDate).getTime();
+      else if (sortKey === "status") cmp = a.status.localeCompare(b.status);
+      else if (sortKey === "progress") {
+        const aC = completionFor(lessons, progress[a.id] || {});
+        const bC = completionFor(lessons, progress[b.id] || {});
+        cmp = aC.pct - bC.pct;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return copy;
+  }, [trainees, sortKey, sortDir, lessons, progress]);
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
 
   function toggleAll(v: boolean) {
     if (v) {
@@ -101,11 +133,23 @@ export function HRTable({
     );
   }
 
+  const SortHeader = ({ label, col }: { label: string; col: SortKey }) => (
+    <button
+      onClick={() => toggleSort(col)}
+      className="inline-flex items-center gap-2 font-semibold hover:text-foreground transition-colors"
+    >
+      {label}
+      {sortKey === col && (
+        <ArrowUpDown className={`h-3.5 w-3.5 transition-transform ${sortDir === "desc" ? "rotate-180" : ""}`} />
+      )}
+    </button>
+  );
+
   return (
     <>
       {selectedIds.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/40 p-3 backdrop-blur-sm">
-          <span className="text-sm font-medium">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-blue-50 dark:bg-blue-950/20 p-4">
+          <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
             {selectedIds.length} selected
           </span>
           <Select value={bulkLesson} onValueChange={setBulkLesson}>
@@ -147,10 +191,10 @@ export function HRTable({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="rounded-lg border overflow-hidden bg-white dark:bg-slate-950">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="border-b bg-slate-50 dark:bg-slate-900">
               <TableHead className="w-10">
                 <Checkbox
                   checked={allChecked ? true : someChecked ? "indeterminate" : false}
@@ -158,24 +202,24 @@ export function HRTable({
                   aria-label="Select all"
                 />
               </TableHead>
-              <TableHead>Name</TableHead>
+              <TableHead><SortHeader label="Name" col="name" /></TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Manager</TableHead>
-              <TableHead>Level</TableHead>
-              <TableHead>Date of Joining</TableHead>
-              <TableHead>Training</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead><SortHeader label="Level" col="level" /></TableHead>
+              <TableHead><SortHeader label="Joined" col="joinDate" /></TableHead>
+              <TableHead><SortHeader label="Progress" col="progress" /></TableHead>
+              <TableHead><SortHeader label="Status" col="status" /></TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {trainees.map((t) => {
+            {sorted.map((t) => {
               const daysSinceJoin = daysBetween(t.joinDate);
               const nl = nextLevel(t.currentLevel);
               const traineeProg = progress[t.id] || {};
               const c = completionFor(lessons, traineeProg);
               return (
-                <TableRow key={t.id} data-state={selected[t.id] ? "selected" : undefined}>
+                <TableRow key={t.id} data-state={selected[t.id] ? "selected" : undefined} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
                   <TableCell>
                     <Checkbox
                       checked={!!selected[t.id]}
@@ -185,12 +229,12 @@ export function HRTable({
                       aria-label={`Select ${t.name}`}
                     />
                   </TableCell>
-                  <TableCell className="font-medium">{t.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{t.phone || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{t.manager || "—"}</TableCell>
+                  <TableCell className="font-semibold">{t.name}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{t.phone || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{t.manager || "—"}</TableCell>
                   <TableCell>
                     <span
-                      className={`rounded px-2 py-0.5 text-xs font-semibold ${LEVEL_INFO[t.currentLevel].tokenClass}`}
+                      className={`rounded-full px-2.5 py-1 text-xs font-bold ${LEVEL_INFO[t.currentLevel].tokenClass}`}
                     >
                       L{t.currentLevel}
                     </span>
@@ -206,17 +250,19 @@ export function HRTable({
                   <TableCell>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <button className="w-32 space-y-1 text-left transition hover:opacity-80">
-                          <Progress value={c.pct} className="h-1.5" />
-                          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                            <ListChecks className="h-3 w-3" />
-                            {c.done}/{c.total} • {c.pct}%
+                        <button className="w-40 space-y-1.5 text-left transition hover:opacity-80">
+                          <Progress value={c.pct} className="h-2" />
+                          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                            <ListChecks className="h-3.5 w-3.5" />
+                            <span className="font-medium">{c.done}/{c.total}</span>
+                            <span>•</span>
+                            <span className="font-semibold text-foreground">{c.pct}%</span>
                           </div>
                         </button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[360px] p-0" align="start">
-                        <div className="border-b px-3 py-2">
-                          <p className="text-sm font-semibold">{t.name} — lessons</p>
+                        <div className="border-b bg-slate-50 dark:bg-slate-900 px-4 py-3">
+                          <p className="text-sm font-semibold">{t.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {c.done}/{c.total} complete • {c.pct}%
                           </p>
@@ -234,7 +280,7 @@ export function HRTable({
                                   return (
                                     <div
                                       key={l.id}
-                                      className="flex items-start gap-2 rounded-md border p-2"
+                                      className="flex items-start gap-2 rounded-md border p-2 hover:bg-slate-50 dark:hover:bg-slate-900/50"
                                     >
                                       <div className="flex flex-1 flex-col gap-1.5">
                                         <p
@@ -243,7 +289,7 @@ export function HRTable({
                                           {l.lessonName}
                                         </p>
                                         <div className="flex flex-wrap items-center gap-3 text-[11px]">
-                                          <label className="flex items-center gap-1.5">
+                                          <label className="flex items-center gap-1.5 cursor-pointer">
                                             <Checkbox
                                               checked={!!p?.watched}
                                               onCheckedChange={(v) =>
@@ -253,7 +299,7 @@ export function HRTable({
                                             Watched
                                           </label>
                                           {l.assignmentUrl && (
-                                            <label className="flex items-center gap-1.5">
+                                            <label className="flex items-center gap-1.5 cursor-pointer">
                                               <Checkbox
                                                 checked={!!p?.assignmentDone}
                                                 onCheckedChange={(v) =>
