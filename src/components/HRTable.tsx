@@ -259,6 +259,7 @@ export function HRTable({
                 <TableHead>Manager</TableHead>
                 <TableHead><SortHeader label="Level" col="level" /></TableHead>
                 <TableHead><SortHeader label="Joined" col="joinDate" /></TableHead>
+                {tab === "exited" && <TableHead>Exit Date</TableHead>}
                 <TableHead><SortHeader label="Progress" col="progress" /></TableHead>
                 <TableHead><SortHeader label="Status" col="status" /></TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -305,6 +306,20 @@ export function HRTable({
                         </span>
                       </div>
                     </TableCell>
+                    {tab === "exited" && (
+                      <TableCell>
+                        {t.exitDate ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-medium">{t.exitDate}</span>
+                            <span className="text-[11px] text-muted-foreground">
+                              {daysBetween(t.joinDate, t.exitDate)} days in program
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Popover>
                         <PopoverTrigger asChild>
