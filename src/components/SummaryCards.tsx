@@ -63,11 +63,14 @@ function Stat({ label, value, hint, icon, accent, color = "gray" }: StatProps) {
 }
 
 export function SummaryCards({ trainees }: { trainees: Trainee[] }) {
-  const total = trainees.length;
-  const promoted = promotedThisMonth(trainees);
+  // Exclude exited trainees from all counts
+  const active = trainees.filter((t) => t.status !== "Exited");
+
+  const total = active.length;
+  const promoted = promotedThisMonth(active);
   const counts = LEVELS.map((l) => ({
     level: l,
-    count: trainees.filter((t) => t.currentLevel === l).length,
+    count: active.filter((t) => t.currentLevel === l).length,
   }));
 
   const colorMap: Record<number, "orange" | "gray" | "green" | "blue" | "purple"> = {
