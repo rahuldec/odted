@@ -39,6 +39,7 @@ import { groupByModule, type Lesson } from "@/lib/modules";
 
 type SortKey = "name" | "level" | "joinDate" | "progress" | "status";
 type SortDir = "asc" | "desc";
+type TabView = "active" | "exited";
 
 export function HRTable({
   trainees,
@@ -63,16 +64,28 @@ export function HRTable({
   const [bulkLesson, setBulkLesson] = useState<string>("");
   const [sortKey, setSortKey] = useState<SortKey>("level");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [tab, setTab] = useState<TabView>("active");
+
+  // Split trainees by exited status
+  const activeTrainees = useMemo(
+    () => trainees.filter((t) => t.status !== "Exited"),
+    [trainees]
+  );
+  const exitedTrainees = useMemo(
+    () => trainees.filter((t) => t.status === "Exited"),
+    [trainees]
+  );
+  const visibleTrainees = tab === "active" ? activeTrainees : exitedTrainees;
 
   const selectedIds = useMemo(
-    () => trainees.filter((t) => selected[t.id]).map((t) => t.id),
-    [trainees, selected],
+    () => visibleTrainees.filter((t) => selected[t.id]).map((t) => t.id),
+    [visibleTrainees, selected],
   );
-  const allChecked = trainees.length > 0 && selectedIds.length === trainees.length;
+  const allChecked = visibleTrainees.length > 0 && selectedIds.length === visibleTrainees.length;
   const someChecked = selectedIds.length > 0 && !allChecked;
 
   const sorted = useMemo(() => {
-    const copy = [...trainees];
+    const copy = [...visibleTrainees];
     copy.sort((a, b) => {
       let cmp = 0;
       if (sortKey === "name") cmp = a.name.localeCompare(b.name);
@@ -87,7 +100,7 @@ export function HRTable({
       return sortDir === "asc" ? cmp : -cmp;
     });
     return copy;
-  }, [trainees, sortKey, sortDir, lessons, progress]);
+  }, [visibleTrainees, sortKey, sortDir, lessons, progress]);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -101,7 +114,7 @@ export function HRTable({
   function toggleAll(v: boolean) {
     if (v) {
       const next: Record<string, boolean> = {};
-      trainees.forEach((t) => (next[t.id] = true));
+      visibleTrainees.forEach((t) => (next[t.id] = true));
       setSelected(next);
     } else setSelected({});
   }
@@ -123,16 +136,6 @@ export function HRTable({
     );
   }
 
-  if (trainees.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed p-12 text-center">
-        <p className="text-sm text-muted-foreground">
-          No trainees yet. Add your first trainee to get started.
-        </p>
-      </div>
-    );
-  }
-
   const SortHeader = ({ label, col }: { label: string; col: SortKey }) => (
     <button
       onClick={() => toggleSort(col)}
@@ -147,6 +150,45 @@ export function HRTable({
 
   return (
     <>
+      {/* ── Tab toggle ── */}
+      <div className="flex items-center gap-1 rounded-xl border bg-slate-50 dark:bg-slate-900 p-1 w-fit">
+        <button
+          onClick={() => { setTab("active"); setSelected({}); }}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+            tab === "active"
+              ? "bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-slate-100"
+              : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+          }`}
+        >
+          Active
+          <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+            tab === "active"
+              ? "bg-orange-100 text-orange-700"
+              : "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+          }`}>
+            {activeTrainees.length}
+          </span>
+        </button>
+        <button
+          onClick={() => { setTab("exited"); setSelected({}); }}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+            tab === "exited"
+              ? "bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-slate-100"
+              : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+          }`}
+        >
+          Exited
+          <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+            tab === "exited"
+              ? "bg-red-100 text-red-700"
+              : "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+          }`}>
+            {exitedTrainees.length}
+          </span>
+        </button>
+      </div>
+
+      {/* ── Bulk action bar ── */}
       {selectedIds.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-blue-50 dark:bg-blue-950/20 p-4">
           <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
@@ -191,188 +233,205 @@ export function HRTable({
         </div>
       )}
 
-      <div className="rounded-lg border overflow-hidden bg-white dark:bg-slate-950">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-b bg-slate-50 dark:bg-slate-900">
-              <TableHead className="w-10">
-                <Checkbox
-                  checked={allChecked ? true : someChecked ? "indeterminate" : false}
-                  onCheckedChange={(v) => toggleAll(!!v)}
-                  aria-label="Select all"
-                />
-              </TableHead>
-              <TableHead><SortHeader label="Name" col="name" /></TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Manager</TableHead>
-              <TableHead><SortHeader label="Level" col="level" /></TableHead>
-              <TableHead><SortHeader label="Joined" col="joinDate" /></TableHead>
-              <TableHead><SortHeader label="Progress" col="progress" /></TableHead>
-              <TableHead><SortHeader label="Status" col="status" /></TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sorted.map((t) => {
-              const daysSinceJoin = daysBetween(t.joinDate);
-              const nl = nextLevel(t.currentLevel);
-              const traineeProg = progress[t.id] || {};
-              const c = completionFor(lessons, traineeProg);
-              return (
-                <TableRow key={t.id} data-state={selected[t.id] ? "selected" : undefined} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                  <TableCell>
-                    <Checkbox
-                      checked={!!selected[t.id]}
-                      onCheckedChange={(v) =>
-                        setSelected((s) => ({ ...s, [t.id]: !!v }))
-                      }
-                      aria-label={`Select ${t.name}`}
-                    />
-                  </TableCell>
-                  <TableCell className="font-semibold">{t.name}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{t.phone || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{t.manager || "—"}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-bold ${LEVEL_INFO[t.currentLevel].tokenClass}`}
-                    >
-                      L{t.currentLevel}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-medium">{t.joinDate}</span>
-                      <span className="text-[11px] text-muted-foreground">
-                        {daysSinceJoin} {daysSinceJoin === 1 ? "day" : "days"} ago
+      {/* ── Table ── */}
+      {sorted.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            {tab === "exited"
+              ? "No exited trainees yet."
+              : "No trainees yet. Add your first trainee to get started."}
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-lg border overflow-hidden bg-white dark:bg-slate-950">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-b bg-slate-50 dark:bg-slate-900">
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allChecked ? true : someChecked ? "indeterminate" : false}
+                    onCheckedChange={(v) => toggleAll(!!v)}
+                    aria-label="Select all"
+                  />
+                </TableHead>
+                <TableHead><SortHeader label="Name" col="name" /></TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Manager</TableHead>
+                <TableHead><SortHeader label="Level" col="level" /></TableHead>
+                <TableHead><SortHeader label="Joined" col="joinDate" /></TableHead>
+                <TableHead><SortHeader label="Progress" col="progress" /></TableHead>
+                <TableHead><SortHeader label="Status" col="status" /></TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sorted.map((t) => {
+                const daysSinceJoin = daysBetween(t.joinDate);
+                const nl = nextLevel(t.currentLevel);
+                const traineeProg = progress[t.id] || {};
+                const c = completionFor(lessons, traineeProg);
+                return (
+                  <TableRow
+                    key={t.id}
+                    data-state={selected[t.id] ? "selected" : undefined}
+                    className={`hover:bg-slate-50 dark:hover:bg-slate-900/50 ${
+                      tab === "exited" ? "opacity-60" : ""
+                    }`}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        checked={!!selected[t.id]}
+                        onCheckedChange={(v) =>
+                          setSelected((s) => ({ ...s, [t.id]: !!v }))
+                        }
+                        aria-label={`Select ${t.name}`}
+                      />
+                    </TableCell>
+                    <TableCell className="font-semibold">{t.name}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{t.phone || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{t.manager || "—"}</TableCell>
+                    <TableCell>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-bold ${LEVEL_INFO[t.currentLevel].tokenClass}`}
+                      >
+                        L{t.currentLevel}
                       </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className="w-40 space-y-1.5 text-left transition hover:opacity-80">
-                          <Progress value={c.pct} className="h-2" />
-                          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                            <ListChecks className="h-3.5 w-3.5" />
-                            <span className="font-medium">{c.done}/{c.total}</span>
-                            <span>•</span>
-                            <span className="font-semibold text-foreground">{c.pct}%</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-medium">{t.joinDate}</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {daysSinceJoin} {daysSinceJoin === 1 ? "day" : "days"} ago
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="w-40 space-y-1.5 text-left transition hover:opacity-80">
+                            <Progress value={c.pct} className="h-2" />
+                            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                              <ListChecks className="h-3.5 w-3.5" />
+                              <span className="font-medium">{c.done}/{c.total}</span>
+                              <span>•</span>
+                              <span className="font-semibold text-foreground">{c.pct}%</span>
+                            </div>
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[360px] p-0" align="start">
+                          <div className="border-b bg-slate-50 dark:bg-slate-900 px-4 py-3">
+                            <p className="text-sm font-semibold">{t.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {c.done}/{c.total} complete • {c.pct}%
+                            </p>
                           </div>
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[360px] p-0" align="start">
-                        <div className="border-b bg-slate-50 dark:bg-slate-900 px-4 py-3">
-                          <p className="text-sm font-semibold">{t.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {c.done}/{c.total} complete • {c.pct}%
-                          </p>
-                        </div>
-                        <ScrollArea className="h-[360px]">
-                          <div className="space-y-3 p-3">
-                            {groupByModule(lessons).map((g) => (
-                              <div key={g.moduleNo} className="space-y-1.5">
-                                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                  {g.moduleNo}. {g.moduleName}
-                                </p>
-                                {g.lessons.map((l) => {
-                                  const p = traineeProg[l.id];
-                                  const done = isLessonComplete(l, p);
-                                  return (
-                                    <div
-                                      key={l.id}
-                                      className="flex items-start gap-2 rounded-md border p-2 hover:bg-slate-50 dark:hover:bg-slate-900/50"
-                                    >
-                                      <div className="flex flex-1 flex-col gap-1.5">
-                                        <p
-                                          className={`text-xs leading-snug ${done ? "text-muted-foreground line-through" : ""}`}
-                                        >
-                                          {l.lessonName}
-                                        </p>
-                                        <div className="flex flex-wrap items-center gap-3 text-[11px]">
-                                          <label className="flex items-center gap-1.5 cursor-pointer">
-                                            <Checkbox
-                                              checked={!!p?.watched}
-                                              onCheckedChange={(v) =>
-                                                onSetLesson(t.id, l.id, { watched: !!v })
-                                              }
-                                            />
-                                            Watched
-                                          </label>
-                                          {l.assignmentUrl && (
+                          <ScrollArea className="h-[360px]">
+                            <div className="space-y-3 p-3">
+                              {groupByModule(lessons).map((g) => (
+                                <div key={g.moduleNo} className="space-y-1.5">
+                                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                    {g.moduleNo}. {g.moduleName}
+                                  </p>
+                                  {g.lessons.map((l) => {
+                                    const p = traineeProg[l.id];
+                                    const done = isLessonComplete(l, p);
+                                    return (
+                                      <div
+                                        key={l.id}
+                                        className="flex items-start gap-2 rounded-md border p-2 hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                                      >
+                                        <div className="flex flex-1 flex-col gap-1.5">
+                                          <p
+                                            className={`text-xs leading-snug ${done ? "text-muted-foreground line-through" : ""}`}
+                                          >
+                                            {l.lessonName}
+                                          </p>
+                                          <div className="flex flex-wrap items-center gap-3 text-[11px]">
                                             <label className="flex items-center gap-1.5 cursor-pointer">
                                               <Checkbox
-                                                checked={!!p?.assignmentDone}
+                                                checked={!!p?.watched}
                                                 onCheckedChange={(v) =>
-                                                  onSetLesson(t.id, l.id, {
-                                                    assignmentDone: !!v,
-                                                  })
+                                                  onSetLesson(t.id, l.id, { watched: !!v })
                                                 }
                                               />
-                                              Assignment
+                                              Watched
                                             </label>
-                                          )}
+                                            {l.assignmentUrl && (
+                                              <label className="flex items-center gap-1.5 cursor-pointer">
+                                                <Checkbox
+                                                  checked={!!p?.assignmentDone}
+                                                  onCheckedChange={(v) =>
+                                                    onSetLesson(t.id, l.id, {
+                                                      assignmentDone: !!v,
+                                                    })
+                                                  }
+                                                />
+                                                Assignment
+                                              </label>
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                      </PopoverContent>
-                    </Popover>
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      value={t.status}
-                      onValueChange={(v) => onUpdate(t.id, { status: v as Status })}
-                    >
-                      <SelectTrigger className="h-8 w-[110px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(["Active", "On Hold", "Exited"] as Status[]).map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {s}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={nl === null}
-                        onClick={() => {
-                          onPromote(t.id);
-                          if (nl !== null) toast.success(`${t.name} promoted to Level ${nl}`);
-                        }}
+                                    );
+                                  })}
+                                </div>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                        </PopoverContent>
+                      </Popover>
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={t.status}
+                        onValueChange={(v) => onUpdate(t.id, { status: v as Status })}
                       >
-                        <ChevronUp className="mr-1 h-3.5 w-3.5" />
-                        Promote
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => setEditing(t)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setDeleting(t)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+                        <SelectTrigger className="h-8 w-[110px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(["Active", "On Hold", "Exited"] as Status[]).map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {s}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={nl === null || tab === "exited"}
+                          onClick={() => {
+                            onPromote(t.id);
+                            if (nl !== null) toast.success(`${t.name} promoted to Level ${nl}`);
+                          }}
+                        >
+                          <ChevronUp className="mr-1 h-3.5 w-3.5" />
+                          Promote
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => setEditing(t)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setDeleting(t)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <EditTraineeDialog
         trainee={editing}
